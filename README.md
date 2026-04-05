@@ -1,34 +1,100 @@
-🕵️‍♂️ Project: [Working Title - e.g., "The Architect's Breach"]
-A Lo-Fi, Survival-Horror Experience in Java.
+🕵️‍♂️ The Architect's Breach
 
-Inspired by the mechanics of Endoparasitic and the atmosphere of The SCP Foundation, this game puts you in the boots of a trapped survivor in a high-security containment facility. Every cell is a death trap, every SCP is a puzzle, and your own eyes are your worst enemy.
+A Lo-Fi Survival Horror Experience in Java
 
-🕹️ Key Mechanics
-Memory Hazard Navigation: The environment shifts and teleports whenever you blink or look away. You must "lock" the room’s reality by keeping your flashlight focused on moving anchor points.
+Inspired by the mechanics of Endoparasitic and the atmosphere of SCP Foundation
 
-Tactile "Plus" Interface: No standard cursor. Use a high-precision "+" reticle to interact with the world, aim your light, and track anomalies.
+🎮 Overview
 
-Mouse-Relative Movement: A unique control scheme where WASD movement is relative to your mouse position, creating a claustrophobic and deliberate navigation feel.
+You are trapped.
 
-Diegetic Puzzles: Solve manual, "Papers, Please" style puzzles—finding codes on physical notes, flipping breakers, and searching for hidden Chip Fragments.
+A high-security containment facility has collapsed into chaos.
+Reality is unstable. The anomalies are awake.
 
-Fragment Synthesis: Collect five unique chips from five distinct SCP containment cells and manually assemble them at the Master Console to trigger your escape.
+Every room is a puzzle. Every blink is a risk.
+And the only way out… is to understand what’s hunting you.
 
+🕹️ Core Gameplay Mechanics
+👁️ Memory Hazard Navigation
+The environment shifts when you blink or look away
+Maintain visual contact to stabilize reality
+Use your flashlight to anchor the world
+➕ Tactile "Plus" Interface
+No traditional cursor
+A precision "+" reticle is your only tool
+Interact, aim, and survive using raw focus
+🧭 Mouse-Relative Movement
+Movement is relative to mouse direction
+Creates a tense, claustrophobic feel
+Every step requires intention
+🧾 Diegetic Puzzle System
+No UI hints. No handholding.
+Solve puzzles through:
+Physical notes
+Breaker switches
+Hidden clues
+Inspired by immersive systems like Papers, Please
+🧩 Fragment Synthesis System
+Collect 5 unique chip fragments
+Each located in a different SCP containment cell
+Assemble them manually at the Master Console to escape
 🧪 Featured Anomalies
-SCP-001 (The Architect): A spatial anomaly that rearranges architecture. Requires constant visual anchoring to prevent being trapped in an infinite loop.
+SCP-001 — "The Architect"
+A spatial anomaly that rearranges the environment
+Lose visual lock → get trapped in infinite loops
+Requires constant awareness and positioning
 
-[More SCPs coming soon...]
+⚠️ More anomalies coming soon...
 
-💀 The "Breach" Experience
-Dynamic Death Sequence: Fail to contain the anomaly, and face a high-intensity glitch-scare followed by haunting, localized audio logs from the facility's final moments.
+💀 The Breach Experience
+⚡ Dynamic Death Sequences
+Failure triggers:
+Intense glitch-scares
+Distorted visuals
+Localized audio logs from the facility’s final moments
+📟 In-Universe UI
+Tactical PDA pause menu
+Tracks:
+Objectives
+Chip fragments
+Fully immersive — no immersion-breaking overlays
+🛠️ Tech Stack
+Category	Details
+Language	Java
+Engine	Custom 2D Engine (Swing / AWT)
+Editor	Antigravity IDE
+Perspective	Top-down / Fixed Camera Hybrid
+🚧 Project Status
 
-In-Universe UI: A "Tactical PDA" pause menu that tracks your objectives and chip inventory without breaking immersion.
+🧱 Currently in early development
+Core mechanics are being prototyped and tested
 
-🛠️ Technical Details
-Language: Java
+🎯 Vision
 
-Engine/Library: Java Swing / AWT (Custom 2D Engine)
+To create a psychological survival horror experience where:
 
-Editor: Antigravity IDE
+Vision is both your weapon and your weakness
+Mechanics are the horror
+Fear comes from losing control of reality itself
+📌 Future Plans
+Additional SCP entities
+Expanded facility layout
+Sound design overhaul
+Save system
+Advanced AI behavior
+🧠 Inspiration
+Endoparasitic
+SCP Foundation
+Papers, Please
+⚠️ Disclaimer
 
-Perspective: Top-down / Fixed-camera Hybrid
+This project is inspired by the SCP universe but is not officially affiliated with the SCP Foundation.
+
+👤 Author
+
+Pixie / Prasan
+B.Tech CSE (AI & ML)
+
+⭐ If You Like This Project...
+
+Give it a ⭐ and follow development!
