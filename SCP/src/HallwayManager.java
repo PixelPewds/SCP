@@ -28,7 +28,18 @@ public class HallwayManager {
 
     // --- Interaction ---------------------------------------------------------
     private int nearDoorIdx = -1;
+    private boolean nearConsole = false;
     private static final double INTERACT_DIST = 85;
+
+    // --- Master Console at dead-end (top of corridor) -------------------------
+    private static final int CONSOLE_X = (COR_LEFT + COR_RIGHT) / 2 - 30;
+    private static final int CONSOLE_Y = 50;
+    private static final int CONSOLE_W = 60;
+    private static final int CONSOLE_H = 50;
+
+    // --- Escape sequence state ------------------------------------------------
+    private boolean escapeTriggered = false;
+    private double escapeTimer = 0;
 
     // --- Ambient details seed ------------------------------------------------
     private final long seed;
@@ -54,7 +65,7 @@ public class HallwayManager {
     private static final Color UNLOCK_COLOR  = new Color(40, 200, 60);
     private static final Color HAZARD_YELLOW = new Color(200, 180, 40, 60);
     private static final Color CENTERLINE    = new Color(180, 160, 40, 30);
-    private static final Color EMERG_LIGHT   = new Color(200, 50, 30, 120);
+
 
     // =========================================================================
 
@@ -97,10 +108,19 @@ public class HallwayManager {
     public double getSavedPlayerY()  { return savedPlayerY; }
     public boolean hasAccessKey()    { return hasAccessKey; }
     public void setHasAccessKey(boolean v) { hasAccessKey = v; }
+    public boolean isNearConsole()   { return nearConsole; }
+    public boolean isEscapeTriggered() { return escapeTriggered; }
+    public double  getEscapeTimer()  { return escapeTimer; }
 
     // --- Update --------------------------------------------------------------
 
     public void update(double playerX, double playerY, int viewH) {
+        // Escape sequence timer
+        if (escapeTriggered) {
+            escapeTimer += 1.0 / 60.0;
+            return;  // freeze hallway updates during escape
+        }
+
         // Smooth camera follow
         double targetCamY = playerY - viewH / 2.0;
         targetCamY = Math.max(COR_TOP, Math.min(COR_BOTTOM - viewH, targetCamY));
@@ -108,6 +128,7 @@ public class HallwayManager {
 
         // Door proximity check
         nearDoorIdx = -1;
+        nearConsole = false;
         for (int i = 0; i < doorCount; i++) {
             double dcx = doorX[i] + DOOR_W / 2.0;
             double dcy = doorY[i] + DOOR_H / 2.0;
@@ -118,6 +139,21 @@ public class HallwayManager {
                 break;
             }
         }
+
+        // Console proximity check
+        double ccx = CONSOLE_X + CONSOLE_W / 2.0;
+        double ccy = CONSOLE_Y + CONSOLE_H / 2.0;
+        double cdx = playerX - ccx;
+        double cdy = playerY - ccy;
+        if (Math.sqrt(cdx * cdx + cdy * cdy) < INTERACT_DIST + 20) {
+            nearConsole = true;
+        }
+    }
+
+    /** Trigger the escape sequence. */
+    public void triggerEscape() {
+        escapeTriggered = true;
+        escapeTimer = 0;
     }
 
     /**
@@ -245,6 +281,9 @@ public class HallwayManager {
         g2.fillRect(COR_LEFT - WALL_THICK, COR_TOP, COR_WIDTH + WALL_THICK * 2, 30);
         g2.setColor(WALL_DARK);
         g2.fillRect(COR_LEFT - WALL_THICK, 28, COR_WIDTH + WALL_THICK * 2, 3);
+
+        // --- Master Console ------------------------------------------------------
+        drawMasterConsole(g2);
     }
 
     private void drawDoor(Graphics2D g2, int i) {
@@ -310,9 +349,85 @@ public class HallwayManager {
         g2.fillOval(x - 6, y - 6, 20, 20);
     }
 
+    // --- Master Console drawing -----------------------------------------------
+
+    private void drawMasterConsole(Graphics2D g2) {
+        int mx = CONSOLE_X, my = CONSOLE_Y;
+
+        // Ambient glow on floor around console
+        double gPulse = 0.5 + 0.5 * Math.sin(System.currentTimeMillis() * 0.003);
+        int glowAlpha = (int)(20 + 25 * gPulse);
+        g2.setColor(new Color(60, 200, 255, glowAlpha));
+        g2.fillOval(mx - 20, my - 15, CONSOLE_W + 40, CONSOLE_H + 30);
+
+        // Console base (dark metal casing)
+        g2.setColor(new Color(28, 28, 32));
+        g2.fillRoundRect(mx - 4, my - 4, CONSOLE_W + 8, CONSOLE_H + 8, 6, 6);
+        g2.setColor(new Color(50, 50, 55));
+        g2.fillRoundRect(mx, my, CONSOLE_W, CONSOLE_H, 4, 4);
+
+        // Screen area
+        int sx = mx + 5, sy = my + 5, sw = CONSOLE_W - 10, sh = CONSOLE_H - 20;
+        g2.setColor(new Color(8, 20, 15));
+        g2.fillRect(sx, sy, sw, sh);
+
+        // CRT scan lines
+        g2.setColor(new Color(30, 80, 60, 25));
+        for (int yy = sy; yy < sy + sh; yy += 2) {
+            g2.drawLine(sx, yy, sx + sw, yy);
+        }
+
+        // Screen content glow
+        double sPulse = 0.5 + 0.5 * Math.sin(System.currentTimeMillis() * 0.004);
+        Color screenGreen = new Color(40, 220, 160, (int)(80 + 60 * sPulse));
+        g2.setColor(screenGreen);
+        g2.setFont(new Font("Courier New", Font.BOLD, 7));
+        g2.drawString("MASTER", sx + 5, sy + 12);
+        g2.drawString("CONSOLE", sx + 3, sy + 21);
+
+        // Blinking cursor
+        if (System.currentTimeMillis() % 1000 < 500) {
+            g2.fillRect(sx + 4, sy + 24, 4, 2);
+        }
+
+        // Screen border (subtle glow)
+        g2.setColor(new Color(40, 200, 160, (int)(40 + 30 * sPulse)));
+        g2.setStroke(new BasicStroke(1f));
+        g2.drawRect(sx, sy, sw, sh);
+
+        // Chip slot at bottom of console
+        int slotX = mx + CONSOLE_W / 2 - 10, slotY = my + CONSOLE_H - 12;
+        g2.setColor(new Color(15, 15, 18));
+        g2.fillRect(slotX, slotY, 20, 8);
+        g2.setColor(new Color(60, 180, 200, (int)(60 + 40 * sPulse)));
+        g2.drawRect(slotX, slotY, 20, 8);
+
+        // Small status LEDs
+        for (int i = 0; i < 3; i++) {
+            int lx = mx + 8 + i * 8;
+            int ly = my + CONSOLE_H - 3;
+            g2.setColor(new Color(40, 200, 160, (int)(80 + 80 * Math.sin(
+                System.currentTimeMillis() * 0.005 + i * 1.2))));
+            g2.fillOval(lx, ly, 3, 3);
+        }
+
+        // Highlight when nearby
+        if (nearConsole) {
+            g2.setColor(new Color(60, 220, 255, (int)(30 + 25 * gPulse)));
+            g2.setStroke(new BasicStroke(2f));
+            g2.drawRoundRect(mx - 6, my - 6, CONSOLE_W + 12, CONSOLE_H + 12, 8, 8);
+        }
+    }
+
     // --- Screen-space prompt drawing -----------------------------------------
 
-    public void drawPrompt(Graphics2D g2, int viewW, int viewH) {
+    public void drawPrompt(Graphics2D g2, int viewW, int viewH, int chipsCollected) {
+        // Console prompt takes priority
+        if (nearConsole) {
+            drawConsolePrompt(g2, viewW, viewH, chipsCollected);
+            return;
+        }
+
         if (nearDoorIdx < 0) return;
 
         boolean locked = doorLocked[nearDoorIdx] && !hasAccessKey;
@@ -326,6 +441,23 @@ public class HallwayManager {
             col = new Color(60, 200, 80);
         }
 
+        drawPromptPill(g2, viewW, viewH, msg, col);
+    }
+
+    private void drawConsolePrompt(Graphics2D g2, int viewW, int viewH, int chipsCollected) {
+        String msg;
+        Color col;
+        if (chipsCollected >= 5) {
+            msg = "Press [E] to SYNTHESIZE MASTER KEY";
+            col = new Color(60, 220, 255);
+        } else {
+            msg = "INSUFFICIENT DATA  [" + chipsCollected + "/5 chips]";
+            col = new Color(200, 60, 50);
+        }
+        drawPromptPill(g2, viewW, viewH, msg, col);
+    }
+
+    private void drawPromptPill(Graphics2D g2, int viewW, int viewH, String msg, Color col) {
         Font f = new Font("Consolas", Font.BOLD, 14);
         g2.setFont(f);
         FontMetrics fm = g2.getFontMetrics();
@@ -357,5 +489,109 @@ public class HallwayManager {
         g2.setFont(new Font("Consolas", Font.BOLD, 12));
         g2.setColor(new Color(180, 170, 155));
         g2.drawString("SITE-19  //  CONTAINMENT WING B", 10, 20);
+    }
+
+    // --- Escape sequence overlay drawing --------------------------------------
+
+    public void drawEscapeSequence(Graphics2D g2, int viewW, int viewH) {
+        if (!escapeTriggered) return;
+
+        double t = escapeTimer;
+
+        // Phase 1: 0–2s — Screen flash + "MASTER KEY SYNTHESIZED"
+        if (t < 2.0) {
+            double flashAlpha = Math.max(0, 1.0 - t / 0.5) * 255;
+            g2.setColor(new Color(60, 220, 255, (int) flashAlpha));
+            g2.fillRect(0, 0, viewW, viewH);
+
+            double fadeIn = Math.min(1.0, t / 0.8);
+            g2.setFont(new Font("Courier New", Font.BOLD, 28));
+            String line = "MASTER KEY SYNTHESIZED";
+            FontMetrics fm = g2.getFontMetrics();
+            int tw = fm.stringWidth(line);
+            g2.setColor(new Color(60, 220, 255, (int)(255 * fadeIn)));
+            g2.drawString(line, (viewW - tw) / 2, viewH / 2 - 20);
+
+            g2.setFont(new Font("Courier New", Font.PLAIN, 14));
+            String sub = "CONTAINMENT OVERRIDE INITIATED";
+            fm = g2.getFontMetrics();
+            g2.setColor(new Color(200, 200, 200, (int)(200 * fadeIn)));
+            g2.drawString(sub, (viewW - fm.stringWidth(sub)) / 2, viewH / 2 + 15);
+        }
+
+        // Phase 2: 2–5s — Alarm sequence with scrolling messages
+        if (t >= 2.0 && t < 5.0) {
+            // Red flashing overlay
+            double alarmPulse = 0.5 + 0.5 * Math.sin(t * 12);
+            g2.setColor(new Color(200, 30, 20, (int)(40 + 60 * alarmPulse)));
+            g2.fillRect(0, 0, viewW, viewH);
+
+            g2.setFont(new Font("Courier New", Font.BOLD, 22));
+            g2.setColor(new Color(220, 60, 40, (int)(180 + 70 * alarmPulse)));
+            String warn = "!! CONTAINMENT BREACH !!";
+            FontMetrics fm = g2.getFontMetrics();
+            g2.drawString(warn, (viewW - fm.stringWidth(warn)) / 2, viewH / 2 - 40);
+
+            // Scrolling status lines
+            g2.setFont(new Font("Courier New", Font.PLAIN, 12));
+            g2.setColor(new Color(180, 180, 170, 200));
+            String[] lines = {
+                "> BLAST DOORS UNLOCKING...",
+                "> SECURITY PROTOCOLS DISABLED",
+                "> EMERGENCY EXIT: SECTOR 7-G",
+                "> ALL PERSONNEL EVACUATE",
+                "> SUBJECT ESCAPE IMMINENT"
+            };
+            double linePhase = (t - 2.0) / 3.0;
+            int shown = Math.min(lines.length, (int)(linePhase * lines.length) + 1);
+            for (int i = 0; i < shown; i++) {
+                g2.drawString(lines[i], 80, viewH / 2 + i * 20);
+            }
+        }
+
+        // Phase 3: 5–7s — Fade to black with final message
+        if (t >= 5.0 && t < 7.0) {
+            double fade = Math.min(1.0, (t - 5.0) / 1.5);
+            g2.setColor(new Color(0, 0, 0, (int)(255 * fade)));
+            g2.fillRect(0, 0, viewW, viewH);
+
+            if (fade > 0.5) {
+                double textFade = (fade - 0.5) / 0.5;
+                g2.setFont(new Font("Courier New", Font.BOLD, 36));
+                String escaped = "YOU ESCAPED.";
+                FontMetrics fm = g2.getFontMetrics();
+                int tw = fm.stringWidth(escaped);
+                g2.setColor(new Color(60, 220, 200, (int)(255 * textFade)));
+                g2.drawString(escaped, (viewW - tw) / 2, viewH / 2 - 10);
+            }
+        }
+
+        // Phase 4: 7s+ — Hold final screen
+        if (t >= 7.0) {
+            g2.setColor(new Color(0, 0, 0, 255));
+            g2.fillRect(0, 0, viewW, viewH);
+
+            g2.setFont(new Font("Courier New", Font.BOLD, 36));
+            String escaped = "YOU ESCAPED.";
+            FontMetrics fm = g2.getFontMetrics();
+            int tw = fm.stringWidth(escaped);
+            g2.setColor(new Color(60, 220, 200));
+            g2.drawString(escaped, (viewW - tw) / 2, viewH / 2 - 10);
+
+            // Sub text
+            g2.setFont(new Font("Courier New", Font.PLAIN, 14));
+            String sub = "SCP Foundation  //  File Closed";
+            fm = g2.getFontMetrics();
+            g2.setColor(new Color(120, 120, 110));
+            g2.drawString(sub, (viewW - fm.stringWidth(sub)) / 2, viewH / 2 + 25);
+
+            // Return prompt
+            double pulse = 0.5 + 0.5 * Math.sin(System.currentTimeMillis() * 0.004);
+            g2.setFont(new Font("Courier New", Font.BOLD, 16));
+            String ret = "Press ENTER to return to Title";
+            fm = g2.getFontMetrics();
+            g2.setColor(new Color(60, 200, 200, (int)(120 + 120 * pulse)));
+            g2.drawString(ret, (viewW - fm.stringWidth(ret)) / 2, viewH / 2 + 70);
+        }
     }
 }

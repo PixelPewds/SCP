@@ -25,7 +25,7 @@ public class GamePanel extends JPanel implements Runnable {
     private static final Font  HUD_BIG  = new Font("Consolas", Font.BOLD,  14);
 
     // --- Game state ----------------------------------------------------------
-    private enum GameState { TITLE, HALLWAY, PLAYING, DEAD }
+    private enum GameState { TITLE, HALLWAY, PLAYING, DEAD, ESCAPED }
     private GameState state = GameState.TITLE;
     private DeathScreen deathScreen;
     private double titlePulse = 0;
@@ -194,6 +194,10 @@ public class GamePanel extends JPanel implements Runnable {
             case DEAD:
                 if (deathScreen != null) deathScreen.update(mouseX, mouseY);
                 break;
+
+            case ESCAPED:
+                hallway.update(player.getX(), player.getY(), panelHeight);
+                break;
         }
     }
 
@@ -226,6 +230,7 @@ public class GamePanel extends JPanel implements Runnable {
             case HALLWAY: drawHallwayState(g2); break;
             case PLAYING: drawPlayingState(g2); break;
             case DEAD:    if (deathScreen != null) deathScreen.draw(g2, panelWidth, panelHeight); break;
+            case ESCAPED: drawEscapedState(g2); break;
         }
     }
 
@@ -311,17 +316,29 @@ public class GamePanel extends JPanel implements Runnable {
         double playerScreenY = player.getY() - camY;
         flashlight.draw(g2, player.getX(), playerScreenY, mouseX, mouseY, 1.0);
 
-        // Screen-space vignette
-        float vr = Math.max(panelWidth, panelHeight) * 0.55f;
-        g2.setPaint(new RadialGradientPaint(panelWidth / 2f, panelHeight / 2f, vr,
-            new float[]{0f, 0.5f, 1f},
-            new Color[]{new Color(0,0,0,0), new Color(0,0,0,60), new Color(0,0,0,200)}));
-        g2.fillRect(0, 0, panelWidth, panelHeight);
+        // Screen-space vignette (skip during escape for cleaner overlays)
+        if (!hallway.isEscapeTriggered()) {
+            float vr = Math.max(panelWidth, panelHeight) * 0.55f;
+            g2.setPaint(new RadialGradientPaint(panelWidth / 2f, panelHeight / 2f, vr,
+                new float[]{0f, 0.5f, 1f},
+                new Color[]{new Color(0,0,0,0), new Color(0,0,0,60), new Color(0,0,0,200)}));
+            g2.fillRect(0, 0, panelWidth, panelHeight);
+        }
 
         // HUD
-        hallway.drawPrompt(g2, panelWidth, panelHeight);
+        hallway.drawPrompt(g2, panelWidth, panelHeight, inventory.getCollectedCount());
         hallway.drawHallwayHud(g2, panelWidth, panelHeight);
         inventory.drawCounter(g2, panelWidth);
+
+        // Escape sequence overlay (drawn on top of everything)
+        hallway.drawEscapeSequence(g2, panelWidth, panelHeight);
+    }
+
+    // --- Escaped state (final screen after escape completes) ------------------
+
+    private void drawEscapedState(Graphics2D g2) {
+        // Let the hallway draw its escape cinematic
+        hallway.drawEscapeSequence(g2, panelWidth, panelHeight);
     }
 
     // --- Playing state -------------------------------------------------------
@@ -435,6 +452,16 @@ public class GamePanel extends JPanel implements Runnable {
                     case KeyEvent.VK_A: case KeyEvent.VK_LEFT:  player.setMovingLeft(true);  break;
                     case KeyEvent.VK_D: case KeyEvent.VK_RIGHT: player.setMovingRight(true); break;
                     case KeyEvent.VK_E:
+                        // --- Master Console interaction ---
+                        if (hallway.isNearConsole()) {
+                            if (inventory.getCollectedCount() >= 5) {
+                                hallway.triggerEscape();
+                                state = GameState.ESCAPED;
+                            }
+                            // else: console shows INSUFFICIENT DATA via prompt
+                            break;
+                        }
+                        // --- Door interaction ---
                         String entered = hallway.tryEnterDoor(player.getX(), player.getY());
                         if (entered != null) {
                             currentCellLabel = entered;
@@ -450,6 +477,16 @@ public class GamePanel extends JPanel implements Runnable {
                     case KeyEvent.VK_ESCAPE:
                         state = GameState.TITLE;
                         break;
+                }
+                break;
+
+            case ESCAPED:
+                // After escape sequence finishes (7s), allow returning to title
+                if (keyCode == KeyEvent.VK_ENTER && hallway.getEscapeTimer() >= 7.0) {
+                    state = GameState.TITLE;
+                    // Reset hallway for a fresh game
+                    // (HallwayManager is reinstantiated via field — we'd need a reset
+                    //  but for now just go to title)
                 }
                 break;
 

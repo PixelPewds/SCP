@@ -99,6 +99,41 @@ public class Flashlight {
         grainSeed = rng.nextDouble() * 10000;
     }
 
+    // --- Beam geometry queries (for other systems) ---------------------------
+
+    public double getIntensity()   { return intensity; }
+    public int    getBaseRange()   { return BASE_RANGE; }
+    public double getHalfConeRad() { return HALF_CONE_RAD; }
+
+    /**
+     * Test whether a world-space point (tx, ty) falls inside the current
+     * flashlight cone originating from (px, py) and aimed at (mx, my).
+     */
+    public boolean isPointInBeam(double px, double py, int mx, int my,
+                                  double tx, double ty) {
+        if (intensity < 0.05) return false;
+
+        double range = BASE_RANGE * intensity;
+
+        // Distance check
+        double dx = tx - px;
+        double dy = ty - py;
+        double dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > range) return false;
+
+        // Angle-within-cone check
+        double beamAngle  = Math.atan2(my - py, mx - px);
+        double pointAngle = Math.atan2(dy, dx);
+        double diff = pointAngle - beamAngle;
+
+        // Normalise to [-PI, PI]
+        while (diff > Math.PI)  diff -= 2 * Math.PI;
+        while (diff < -Math.PI) diff += 2 * Math.PI;
+
+        double halfCone = HALF_CONE_RAD * (0.85 + 0.15 * intensity);
+        return Math.abs(diff) <= halfCone;
+    }
+
     // --- Rendering -----------------------------------------------------------
 
     public void draw(Graphics2D g2, double px, double py,
