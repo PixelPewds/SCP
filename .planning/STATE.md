@@ -1,9 +1,9 @@
 ---
-total_phases: 0
+total_phases: 5
 completed_phases: 0
 active_phase: none
 milestone: v1.0
-milestone_status: initialized
+milestone_status: open
 ---
 
 # State
@@ -12,7 +12,7 @@ milestone_status: initialized
 Phase: Not started (Defining requirements)
 Plan: —
 Status: Initializing Milestone v1.0
-Last activity: 2026-04-15 — Milestone v1.0 started
+Last activity: 2026-04-15 — Milestone v1.0 initialized
 
 ## Active Goals
 - Initialize GSD planning for SCP Anomaly Roster Expansion.
