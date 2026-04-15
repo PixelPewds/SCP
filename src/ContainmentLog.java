@@ -20,6 +20,7 @@ public class ContainmentLog {
     private final int    logNumber;
     private final String date;
     private final String site;
+    private final String cellLabel;
 
     // --- Pre-rendered paper texture ------------------------------------------
     private final BufferedImage paper;
@@ -42,9 +43,10 @@ public class ContainmentLog {
 
     // =========================================================================
 
-    public ContainmentLog(int panelW, int panelH) {
+    public ContainmentLog(int panelW, int panelH, String cellLabel) {
         logX = (panelW - LOG_W) / 2;
         logY = (panelH - LOG_H) / 2;
+        this.cellLabel = (cellLabel != null) ? cellLabel : "SCP-001";
 
         Random rng = new Random();
         accessCode = String.format("%04d", rng.nextInt(10000));
@@ -161,45 +163,8 @@ public class ContainmentLog {
         g2.setColor(new Color(80, 70, 55, 120));
         g2.drawLine(lx, ty, logX + LOG_W - 30, ty);
 
-        // Subject
-        ty += 20;
-        drawTW(g2, "SUBJECT: SCP-173", lx, ty, F_BOLD, INK);
-        ty += 16;
-        drawTW(g2, "CLASS:   EUCLID", lx, ty, F_BODY, INK);
-
-        // Notes header
-        ty += 26;
-        drawTW(g2, "CONTAINMENT NOTES:", lx, ty, F_BOLD, INK);
-        g2.drawLine(lx, ty + 3, lx + 155, ty + 3);
-        ty += 20;
-
-        // Body text
-        String[] lines = {
-            "Subject was observed moving during",
-            "a power outage in Sector 7-G at",
-            "approximately 0347 hrs.",
-            "",
-            "Personnel report scraping sounds",
-            "from within the containment cell.",
-            "Blood residue found near eastern",
-        };
-        for (String line : lines) {
-            drawTW(g2, line, lx, ty, F_BODY, INK);
-            ty += 15;
-        }
-
-        // Redacted line
-        drawTW(g2, "wall. Source: ", lx, ty, F_BODY, INK);
-        int rStart = lx + g2.getFontMetrics(F_BODY).stringWidth("wall. Source: ");
-        g2.setColor(REDACT_BG);
-        g2.fillRect(rStart, ty - 11, 90, 14);
-        ty += 22;
-
-        drawTW(g2, "All personnel must maintain", lx, ty, F_BODY, INK);
-        ty += 15;
-        drawTW(g2, "DIRECT VISUAL CONTACT at all", lx, ty, F_BOLD, INK);
-        ty += 15;
-        drawTW(g2, "times. DO NOT BLINK.", lx, ty, F_BOLD, INK_RED);
+        // Subject + notes: dispatched by cell label
+        ty = drawBodyContent(g2, lx, ty);
 
         // Access code section
         ty += 24;
@@ -247,6 +212,113 @@ public class ContainmentLog {
         g2.setFont(F_HINT);
         g2.setColor(new Color(200, 190, 170, 180));
         g2.drawString("[E] or [ESC] to close", logX + LOG_W - 150, logY + LOG_H - 10);
+    }
+
+    // -------------------------------------------------------------------------
+    // Cell-specific body content
+    // -------------------------------------------------------------------------
+
+    /**
+     * Renders the subject, classification, and containment notes section.
+     * Branches on {@code cellLabel} to display SCP-appropriate lore.
+     *
+     * @return the updated {@code ty} value after all content is drawn
+     */
+    private int drawBodyContent(Graphics2D g2, int lx, int ty) {
+        if ("SCP-002".equals(cellLabel)) {
+            return drawBody096(g2, lx, ty);
+        }
+        return drawBodyDefault(g2, lx, ty);
+    }
+
+    /** SCP-096 "The Shy Guy" — cell SCP-002. */
+    private int drawBody096(Graphics2D g2, int lx, int ty) {
+        ty += 20;
+        drawTW(g2, "SUBJECT: SCP-096", lx, ty, F_BOLD, INK);
+        ty += 16;
+        drawTW(g2, "CLASS:   EUCLID", lx, ty, F_BODY, INK);
+
+        ty += 26;
+        drawTW(g2, "CONTAINMENT NOTES:", lx, ty, F_BOLD, INK);
+        g2.setColor(INK);
+        g2.setStroke(new BasicStroke(1f));
+        g2.drawLine(lx, ty + 3, lx + 155, ty + 3);
+        ty += 20;
+
+        String[] notes = {
+            "12 cm steel plating on all",
+            "interior surfaces. No recording",
+            "devices permitted.",
+            "",
+            "NO personnel are permitted to",
+            "view SCP-096's face, directly",
+            "or via any visual medium.",
+            "",
+            "Breach event recorded: 0 days",
+            "since last incident.",
+        };
+        for (String line : notes) {
+            drawTW(g2, line, lx, ty, F_BODY, INK);
+            ty += 15;
+        }
+
+        ty += 4;
+        drawTW(g2, "DO NOT VIEW FACE.", lx, ty, F_BOLD, INK_RED);
+        ty += 15;
+
+        // Redacted researcher note
+        drawTW(g2, "Reported by: Dr. ", lx, ty, F_BODY, INK);
+        int rStart = lx + g2.getFontMetrics(F_BODY).stringWidth("Reported by: Dr. ");
+        g2.setColor(REDACT_BG);
+        g2.fillRect(rStart, ty - 11, 80, 14);
+        ty += 6;
+
+        return ty;
+    }
+
+    /** Default log body — SCP-173 (used for all non-specialised cells). */
+    private int drawBodyDefault(Graphics2D g2, int lx, int ty) {
+        ty += 20;
+        drawTW(g2, "SUBJECT: SCP-173", lx, ty, F_BOLD, INK);
+        ty += 16;
+        drawTW(g2, "CLASS:   EUCLID", lx, ty, F_BODY, INK);
+
+        ty += 26;
+        drawTW(g2, "CONTAINMENT NOTES:", lx, ty, F_BOLD, INK);
+        g2.setColor(INK);
+        g2.setStroke(new BasicStroke(1f));
+        g2.drawLine(lx, ty + 3, lx + 155, ty + 3);
+        ty += 20;
+
+        String[] lines = {
+            "Subject was observed moving during",
+            "a power outage in Sector 7-G at",
+            "approximately 0347 hrs.",
+            "",
+            "Personnel report scraping sounds",
+            "from within the containment cell.",
+            "Blood residue found near eastern",
+        };
+        for (String line : lines) {
+            drawTW(g2, line, lx, ty, F_BODY, INK);
+            ty += 15;
+        }
+
+        // Redacted line
+        drawTW(g2, "wall. Source: ", lx, ty, F_BODY, INK);
+        int rStart = lx + g2.getFontMetrics(F_BODY).stringWidth("wall. Source: ");
+        g2.setColor(REDACT_BG);
+        g2.fillRect(rStart, ty - 11, 90, 14);
+        ty += 22;
+
+        drawTW(g2, "All personnel must maintain", lx, ty, F_BODY, INK);
+        ty += 15;
+        drawTW(g2, "DIRECT VISUAL CONTACT at all", lx, ty, F_BOLD, INK);
+        ty += 15;
+        drawTW(g2, "times. DO NOT BLINK.", lx, ty, F_BOLD, INK_RED);
+        ty += 6;
+
+        return ty;
     }
 
     /** Draw text with subtle typewriter misalignment. */

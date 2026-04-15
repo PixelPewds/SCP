@@ -41,6 +41,7 @@ public class GamePanel extends JPanel implements Runnable {
     private final HallwayManager    hallway;
     private final InventorySystem   inventory;
     private ChipFragment            cellFragment;  // current cell's fragment (or null)
+    private ShyGuyBehavior          shyGuy;        // non-null only when in SCP-002
 
     private Thread  gameThread;
     private boolean running;
@@ -189,6 +190,14 @@ public class GamePanel extends JPanel implements Runnable {
                     }
                 }
                 if (sanity.getSanity() <= 0) triggerDeath("PSYCHOLOGICAL COLLAPSE");
+
+                // SCP-002: Shy Guy update & kill detection
+                if ("SCP-002".equals(currentCellLabel) && shyGuy != null) {
+                    shyGuy.update(DT, mouseX, mouseY, player.getX(), player.getY());
+                    if (shyGuy.hasKilledPlayer(player.getX(), player.getY(), 14)) {
+                        triggerDeath("SCP-096 \u2014 YOU LOOKED");
+                    }
+                }
                 break;
 
             case DEAD:
@@ -211,8 +220,9 @@ public class GamePanel extends JPanel implements Runnable {
         roomManager.reset();
         interaction.reset();
         sanity.reset();
-        deathScreen = null;
+        deathScreen  = null;
         cellFragment = null;
+        shyGuy       = null;
     }
 
     // =========================================================================
@@ -349,9 +359,20 @@ public class GamePanel extends JPanel implements Runnable {
 
         drawBackground(g2);
         drawParticles(g2);
+
+        // SCP-096 rage overlay goes behind the room geometry
+        if ("SCP-002".equals(currentCellLabel) && shyGuy != null) {
+            shyGuy.drawRageOverlay(g2, panelWidth, panelHeight);
+        }
+
         roomManager.drawRoom(g2);
         roomManager.drawAnchor(g2);
-        if (cellFragment != null) cellFragment.draw(g2);  // draw fragment in world
+        if (cellFragment != null) cellFragment.draw(g2);
+
+        // Draw SCP-096 entity on top of furniture
+        if ("SCP-002".equals(currentCellLabel) && shyGuy != null) {
+            shyGuy.draw(g2);
+        }
         player.draw(g2);
         drawVignette(g2);
         flashlight.draw(g2, player.getX(), player.getY(), mouseX, mouseY, sanity.getSanityFactor());
@@ -467,6 +488,10 @@ public class GamePanel extends JPanel implements Runnable {
                             currentCellLabel = entered;
                             player.reset(panelWidth / 2.0, panelHeight / 2.0);
                             resetCell();
+                            interaction.setCell(currentCellLabel);
+                            boolean isScp002 = "SCP-002".equals(currentCellLabel);
+                            roomManager.setBlinkEnabled(!isScp002);
+                            if (isScp002) shyGuy = new ShyGuyBehavior();
                             // Spawn fragment if not already collected for this cell
                             if (!inventory.isCollected(currentCellLabel)) {
                                 cellFragment = new ChipFragment(currentCellLabel);

@@ -36,6 +36,9 @@ public class RoomManager {
     private int swapCount = 0;  // how many times the room has shifted
     private boolean shiftOccurred = false;  // consumed by GamePanel each frame
 
+    // --- Blink enable flag (disabled in cells that have their own SCP mechanic) -
+    private boolean blinkEnabled = true;
+
     // --- Anchor (shared across all layouts) -----------------------------------
     private final AnchorPoint anchor;
     private boolean playerIsStaring = false;
@@ -52,6 +55,13 @@ public class RoomManager {
         blinkState = BlinkState.OPEN; blinkTimer = 0; phaseTimer = 0;
         overlayAlpha = 0; swapDone = false;
         playerIsStaring = false; flashMessage = null;
+        blinkEnabled = true;
+    }
+
+    /** Enable or disable the blink/swap mechanic (pass false for SCP-002, etc.). */
+    public void setBlinkEnabled(boolean enabled) {
+        this.blinkEnabled = enabled;
+        if (!enabled) overlayAlpha = 0;  // clear any in-progress fade
     }
 
     // =========================================================================
@@ -130,7 +140,8 @@ public class RoomManager {
             if (flashTimer <= 0) flashMessage = null;
         }
 
-        // Blink state machine
+        // Blink state machine (skip entirely when disabled for this cell)
+        if (!blinkEnabled) return;
         switch (blinkState) {
             case OPEN:
                 blinkTimer += dt;

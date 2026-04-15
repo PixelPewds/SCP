@@ -12,6 +12,12 @@ public class InteractionSystem {
     private boolean canInteract;
     private RoomObject nearestDesk;
 
+    /** The SCP label for the current cell (e.g. "SCP-002"). Drives log content. */
+    private String cellLabel = "SCP-001";
+
+    /** Call this whenever the player enters a new containment cell. */
+    public void setCell(String label) { this.cellLabel = label; }
+
     // --- Update (called every frame) -----------------------------------------
 
     public void update(double playerX, double playerY, RoomObject[] objects) {
@@ -40,7 +46,7 @@ public class InteractionSystem {
         if (openLog != null) {
             openLog = null;             // close log
         } else if (canInteract) {
-            openLog = new ContainmentLog(panelW, panelH);
+            openLog = new ContainmentLog(panelW, panelH, cellLabel);
         }
     }
 

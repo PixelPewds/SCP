@@ -1,7 +1,7 @@
 ---
 total_phases: 5
-completed_phases: 0
-active_phase: none
+completed_phases: 1
+active_phase: 2
 milestone: v1.0
 milestone_status: open
 ---
@@ -9,14 +9,15 @@ milestone_status: open
 # State
 
 ## Current Position
-Phase: Not started (Defining requirements)
-Plan: —
-Status: Initializing Milestone v1.0
-Last activity: 2026-04-15 — Milestone v1.0 initialized
+Phase: 2 — SCP-096 Implementation (COMPLETE)
+Plan: ShyGuyBehavior entity, blink suppression, SCP-096 lore log
+Status: Compiled clean, ready for manual smoke-test
+Last activity: 2026-04-15 — Phase 2 implemented
 
 ## Active Goals
-- Initialize GSD planning for SCP Anomaly Roster Expansion.
-- Implement unique mechanics for 4 new SCP anomalies.
+- Run the game and smoke-test SCP-002 door.
+- Verify WEEPING → SCREAMING → CHARGING states.
+- Confirm death screen reads "SCP-096 — YOU LOOKED".
 
 ## Blockers
 - None.
@@ -25,3 +26,6 @@ Last activity: 2026-04-15 — Milestone v1.0 initialized
 - Project is a pure Java/Swing 2D horror game.
 - Core engine supports "The Architect" (spatial shifting).
 - Goal is to add 4 distinct behaviors (avoidance, teleportation, patrol, corrosion).
+- Phase 2 complete: ShyGuyBehavior added. ContainmentLog, InteractionSystem, RoomManager,
+  and GamePanel updated. blinkEnabled flag allows per-cell blink suppression.
+  ContainmentLog now dispatches body content by cell label (SCP-002 → SCP-096 lore).
